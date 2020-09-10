@@ -1,0 +1,44 @@
+
+
+
+
+#make sure that our raw file reader outputs will have the filename as a column
+for i in *; do awk '{print FILENAME"\t"$0}' $i > $i.bk; mv $i.bk $i; done
+
+
+#combine every chromatogram into the 'merged' chromatogram
+cat *.txt > combined_chromatograms.txt
+
+##replace the tabs with commas
+#rawfile reader script is currently ouputting tsv's by default
+
+#then make sure to add the file with the headers as well
+echo "File,Mass,Intensity,scan,polarity,Mstype" > header_file.txt
+
+
+
+tr '\t' ',' < combined_chromatograms.txt > combined_chromatograms.csv
+
+
+
+#make sure that we have the correct number of fields in each line
+awk -F'\t' 'NF==6 {print}' combined_chromatograms.csv  > combined_chromatograms_right_number_of_columns.csv
+
+cat header_file.txt combined_chromatograms.csv > combined_chromatograms_with_header.csv
+
+rm combined_chromatograms.csv
+combined_chromatograms.txt
+
+
+#then, run the simple vaex script which will convert everything to hdf5!
+#python script is very simple, can just be entered at the command line
+python3
+
+
+import vaex
+file_path="/shares/ibaxter_share/private/ahubbard/broad_data_ST000923/combined_chromatograms_right_number_of_columns_with_header.csv"
+  
+ 
+dv = vaex.from_csv(file_path, convert=True, chunk_size=50_000_000)
+vaex_df.export_hdf5('combined_chromatograms_right_number_of_columns_with_header_hdf5.csv')
+
